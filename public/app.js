@@ -24,6 +24,19 @@
     unauthorized: "The API key was rejected. Check it in settings.",
     unreachable: "Couldn't reach the assistant — check your connection and try again.",
     "bad-request": "That request couldn't be processed — try again.",
+    "mic-denied": "Microphone access was denied. Enable it in your browser settings and try again.",
+    "mic-unavailable":
+      "Microphone access isn't available in this browser. You can still type.",
+    "captions-unavailable":
+      "Live captions aren't supported in this browser — recording without them.",
+  };
+
+  var voice = {
+    recorder: null,
+    recognition: null,
+    chunks: [],
+    stream: null,
+    listening: false,
   };
 
   var ORB_STATES = {
@@ -194,6 +207,9 @@
     document.getElementById("btn-send").addEventListener("click", function () {
       handleSend();
     });
+    document.getElementById("btn-mic").addEventListener("click", function () {
+      handleMic();
+    });
     document.getElementById("chat-input").addEventListener("keydown", function (event) {
       if (event.key === "Enter") {
         handleSend();
@@ -251,6 +267,109 @@
     audio.play().catch(function () {
       URL.revokeObjectURL(url);
     });
+  }
+
+  function handleMic() {
+    if (voice.listening) {
+      stopVoice();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showInlineError("mic-unavailable");
+      return;
+    }
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(function (stream) {
+        voice.stream = stream;
+        voice.chunks = [];
+        setOrbState("listening");
+        try {
+          voice.recorder = new MediaRecorder(stream);
+          voice.recorder.ondataavailable = function (event) {
+            if (event.data.size) {
+              voice.chunks.push(event.data);
+            }
+          };
+          voice.recorder.onstop = function () {
+            finishVoice();
+          };
+          voice.recorder.start();
+          startCaptions();
+          voice.listening = true;
+        } catch (err) {
+          showInlineError("mic-unavailable");
+          setOrbState("idle");
+          voice.stream.getTracks().forEach(function (track) {
+            track.stop();
+          });
+        }
+      })
+      .catch(function () {
+        showInlineError("mic-denied");
+      });
+  }
+
+  function startCaptions() {
+    var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      showInlineError("captions-unavailable");
+      return;
+    }
+    var recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onresult = function (event) {
+      var transcript = "";
+      for (var i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      document.getElementById("chat-input").value = transcript;
+    };
+    recognition.onerror = function (event) {
+      if (event.error === "not-allowed") {
+        showInlineError("mic-denied");
+      }
+    };
+    recognition.onend = function () {
+      if (voice.listening) {
+        try {
+          recognition.start();
+        } catch (err) {
+          /* recognition already active */
+        }
+      }
+    };
+    voice.recognition = recognition;
+    recognition.start();
+  }
+
+  function stopVoice() {
+    voice.listening = false;
+    if (voice.recognition) {
+      voice.recognition.stop();
+    }
+    if (voice.recorder && voice.recorder.state !== "inactive") {
+      voice.recorder.stop();
+    }
+  }
+
+  async function finishVoice() {
+    var blob = new Blob(voice.chunks, { type: "audio/webm" });
+    voice.stream.getTracks().forEach(function (track) {
+      track.stop();
+    });
+    setBusy(true);
+    try {
+      var result = await window.calmspace.api.transcribe(blob);
+      document.getElementById("chat-input").value = result.text;
+    } catch (err) {
+      showInlineError(err.kind || "unknown");
+    } finally {
+      setBusy(false);
+      setOrbState("idle");
+    }
   }
 
   async function handleSend() {
