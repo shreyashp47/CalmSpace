@@ -187,10 +187,10 @@
     }
   }
 
-  window.calmspace = {
+  window.calmspace = Object.assign(window.calmspace || {}, {
     setOrbState: setOrbState,
     STORAGE_KEYS: STORAGE_KEYS,
-  };
+  });
 
   boot();
 })();
