@@ -59,7 +59,7 @@ test("settings saves all fields to localStorage and moves to chat", () => {
   assert.equal(ls.getItem("calmspace_voice_enabled"), "false");
   assert.equal(ls.getItem("calmspace_api_key"), "gsk_test_key");
   assert.equal(ls.getItem("calmspace_setup_done"), "true");
-  assert.match(doc.body.textContent, /Chat screen/);
+  assert.ok(doc.getElementById("chat-input"), "lands on the chat screen");
 });
 
 test("voice toggle defaults to ON for fresh users", () => {
@@ -85,5 +85,5 @@ test("fully-set-up user lands on chat directly", () => {
     calmspace_consent_seen: "true",
     calmspace_setup_done: "true",
   });
-  assert.match(dom.window.document.body.textContent, /Chat screen/);
+  assert.ok(dom.window.document.getElementById("chat-input"));
 });
