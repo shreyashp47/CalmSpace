@@ -6,7 +6,9 @@ A voice-first browser app that helps you regain mental peace after an argument, 
 
 ## Status
 
-**Planning phase.** The repository currently contains the requirements and the step-by-step implementation plan; no code has been written yet. Implementation is tracked as GitHub issues, scoped from the prompts in `opencode-prompts.md`:
+**MVP implemented** — issues #1–#10 are closed and covered by 64 automated tests. Remaining: pre-launch hardening (#11 accessibility, #12 mobile responsiveness, #13 rate limiting), Phase 2 (#14), and open decisions (#15).
+
+Implementation is tracked as GitHub issues, scoped from the prompts in `opencode-prompts.md`:
 
 - **MVP** (issues #1–#10): consent/settings flow, voice chat with live captions and TTS, structured AI conversation arc, crisis detection
 - **Pre-launch hardening** (issues #11–#13): accessibility, mobile responsiveness, rate limiting

@@ -2,9 +2,9 @@
 
 ## Status
 
-- **Planning phase** — no code exists yet; the stack is decided in docs, not code.
+- **MVP implemented** — issues #1–#10 closed; all 10 prompts (0–8) from `opencode-prompts.md` are built and tested.
 - Project: Calm Space, a voice-first web app (frontend + backend).
-- Remote: https://github.com/shreyashp47/CalmSpace — implementation tracked as issues (#1–#15), scoped from `opencode-prompts.md`.
+- Remote: https://github.com/shreyashp47/CalmSpace — implementation tracked as issues (#1–#15), scoped from `opencode-prompts.md`. Remaining: #11–#13 (pre-launch hardening), #14 (Phase 2), #15 (open decisions).
 
 ## Decided architecture (source of truth: `opencode-prompts.md`)
 
