@@ -44,3 +44,46 @@ test("returning visit with consent flag skips consent screen", () => {
   assert.equal(doc.getElementById("consent-continue"), null);
   assert.match(doc.body.textContent, /Before we start/);
 });
+
+test("settings saves all fields to localStorage and moves to chat", () => {
+  const dom = bootDom({ calmspace_consent_seen: "true" });
+  const doc = dom.window.document;
+
+  doc.getElementById("settings-context").value = "I prefer short replies";
+  doc.getElementById("settings-voice").checked = false;
+  doc.getElementById("settings-api-key").value = "gsk_test_key";
+  doc.getElementById("settings-save").click();
+
+  const ls = dom.window.localStorage;
+  assert.equal(ls.getItem("calmspace_context"), "I prefer short replies");
+  assert.equal(ls.getItem("calmspace_voice_enabled"), "false");
+  assert.equal(ls.getItem("calmspace_api_key"), "gsk_test_key");
+  assert.equal(ls.getItem("calmspace_setup_done"), "true");
+  assert.match(doc.body.textContent, /Chat screen/);
+});
+
+test("voice toggle defaults to ON for fresh users", () => {
+  const dom = bootDom({ calmspace_consent_seen: "true" });
+  assert.equal(dom.window.document.getElementById("settings-voice").checked, true);
+});
+
+test("settings pre-fills previously saved values", () => {
+  const dom = bootDom({
+    calmspace_consent_seen: "true",
+    calmspace_context: "saved context",
+    calmspace_voice_enabled: "false",
+    calmspace_api_key: "gsk_saved",
+  });
+  const doc = dom.window.document;
+  assert.equal(doc.getElementById("settings-context").value, "saved context");
+  assert.equal(doc.getElementById("settings-voice").checked, false);
+  assert.equal(doc.getElementById("settings-api-key").value, "gsk_saved");
+});
+
+test("fully-set-up user lands on chat directly", () => {
+  const dom = bootDom({
+    calmspace_consent_seen: "true",
+    calmspace_setup_done: "true",
+  });
+  assert.match(dom.window.document.body.textContent, /Chat screen/);
+});

@@ -49,7 +49,48 @@
       '<div class="screen">' +
         '<div class="card">' +
         '<h2 class="card-title">Before we start</h2>' +
-        '<p class="card-text">Settings screen — coming next.</p>' +
+        '<label class="field-label" for="settings-context">' +
+        "Anything you'd like the assistant to know before we start?" +
+        "</label>" +
+        '<textarea id="settings-context" class="field field-textarea" placeholder="Optional — e.g. what helps you when you are stressed"></textarea>' +
+        '<div class="field-row">' +
+        '<label class="field-label" for="settings-voice">Speak replies out loud</label>' +
+        '<input type="checkbox" id="settings-voice" class="switch" checked>' +
+        "</div>" +
+        '<label class="field-label" for="settings-api-key">Use your own Groq API key (optional, for privacy)</label>' +
+        '<input type="password" id="settings-api-key" class="field" placeholder="gsk_...">' +
+        '<p class="field-hint">' +
+        "If left blank, we'll use a shared free key. Your own key is stored only in " +
+        "your browser and is never sent to our server." +
+        "</p>" +
+        '<button id="settings-save" class="btn btn-primary" type="button">Save and continue</button>' +
+        "</div>" +
+        "</div>"
+    );
+
+    var savedContext = localStorage.getItem(STORAGE_KEYS.context) || "";
+    var voiceEnabled = localStorage.getItem(STORAGE_KEYS.voiceEnabled) !== "false";
+    var savedKey = localStorage.getItem(STORAGE_KEYS.apiKey) || "";
+
+    document.getElementById("settings-context").value = savedContext;
+    document.getElementById("settings-voice").checked = voiceEnabled;
+    document.getElementById("settings-api-key").value = savedKey;
+
+    document.getElementById("settings-save").addEventListener("click", function () {
+      localStorage.setItem(STORAGE_KEYS.context, document.getElementById("settings-context").value);
+      localStorage.setItem(STORAGE_KEYS.voiceEnabled, document.getElementById("settings-voice").checked ? "true" : "false");
+      localStorage.setItem(STORAGE_KEYS.apiKey, document.getElementById("settings-api-key").value);
+      localStorage.setItem(STORAGE_KEYS.setupDone, "true");
+      showChat();
+    });
+  }
+
+  function showChat() {
+    render(
+      '<div class="screen">' +
+        '<div class="card">' +
+        '<h2 class="card-title">Calm Space</h2>' +
+        '<p class="card-text">Chat screen — coming next.</p>' +
         "</div>" +
         "</div>"
     );
@@ -60,6 +101,8 @@
       showConsent();
     } else if (localStorage.getItem(STORAGE_KEYS.setupDone) !== "true") {
       showSettings();
+    } else {
+      showChat();
     }
   }
 
