@@ -176,9 +176,12 @@
         "</div>" +
         '<header class="topbar">' +
         '<span class="brand">Calm space</span>' +
+        '<div class="topbar-actions">' +
+        '<button id="btn-end" class="btn btn-ghost" type="button">End session</button>' +
         '<button id="btn-settings" class="icon-btn" type="button" aria-label="Settings">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 .1-1 7.6 7.6 0 0 0-.1-1l2.1-1.6a.5.5 0 0 0 .1-.7l-2-3.4a.5.5 0 0 0-.6-.2l-2.5 1a7.7 7.7 0 0 0-1.7-1L14.4 2a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.6a7.7 7.7 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.4a.5.5 0 0 0 .1.7L6.5 11a7.6 7.6 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.7l2 3.4c.1.2.4.3.6.2l2.5-1a7.7 7.7 0 0 0 1.7 1l.4 2.6c0 .2.2.4.5.4h4c.2 0 .4-.2.5-.4l.4-2.6a7.7 7.7 0 0 0 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.4a.5.5 0 0 0-.1-.7L19.4 13z" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>' +
         "</button>" +
+        "</div>" +
         "</header>" +
         '<main class="chat-main">' +
         '<div id="orb" class="orb" role="status">' +
@@ -203,6 +206,9 @@
 
     document.getElementById("btn-settings").addEventListener("click", function () {
       showSettings(true);
+    });
+    document.getElementById("btn-end").addEventListener("click", function () {
+      handleEndSession();
     });
     document.getElementById("btn-send").addEventListener("click", function () {
       handleSend();
@@ -369,6 +375,29 @@
     } finally {
       setBusy(false);
       setOrbState("idle");
+    }
+  }
+
+  var SIGN_OFF =
+    "Thank you for taking this moment for yourself. However you're feeling, it's okay — " +
+    "take a breath, and come back whenever you need to.";
+
+  function handleEndSession() {
+    stopVoice();
+    clearInlineError();
+    var hadConversation = state.messages.length > 0;
+    state.messages = [];
+    var messages = document.getElementById("messages");
+    messages.innerHTML = "";
+    setOrbState("idle");
+    if (hadConversation) {
+      var bubble = document.createElement("div");
+      bubble.className = "message message-assistant message-signoff";
+      bubble.textContent = SIGN_OFF;
+      messages.appendChild(bubble);
+      setTimeout(function () {
+        messages.innerHTML = "";
+      }, 3000);
     }
   }
 
