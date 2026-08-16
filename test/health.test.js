@@ -1,12 +1,12 @@
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
-const { app } = require("../server/index.js");
+const { createApp } = require("../server/app.js");
 
 let server;
 let baseUrl;
 
 before(async () => {
-  server = app.listen(0);
+  server = createApp().listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
 });

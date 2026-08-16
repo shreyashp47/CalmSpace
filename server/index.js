@@ -1,22 +1,17 @@
-require("dotenv").config();
+"use strict";
+
 const express = require("express");
 const path = require("path");
 
-const app = express();
+const { createApp } = require("./app");
+
 const PORT = process.env.PORT || 3000;
+const app = createApp();
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "..", "public")));
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
-});
-
-let server;
 if (require.main === module) {
-  server = app.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`Calm Space server listening on http://localhost:${PORT}`);
   });
 }
 
-module.exports = { app, getServer: () => server, closeServer: () => server && server.close() };
+module.exports = app;
