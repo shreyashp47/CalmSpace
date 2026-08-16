@@ -21,4 +21,4 @@
 - Dark-only theme; all 8 tokens in `requirements.md` §5 are locked — do not deviate.
 - Do not implement Phase 2 (session save/resume) — it needs its own requirements pass.
 - Open decisions (barge-in, light mode timing, rate-limit timing, Phase 2 scope) are unresolved — see issue #15; don't silently pick one.
-- Run `npm install` / `npm start` once the scaffold (issue #1) lands; verify commands against the actual repo before documenting them here.
+- Commands (verified): `npm install`, `npm start` (Express on :3000), `npm test` (node:test runner, files in `test/`). No lint/typecheck configured.

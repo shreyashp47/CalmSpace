@@ -26,7 +26,13 @@ Dark-only "Deep calm" theme with locked tokens (see `requirements.md` §5). Colo
 
 ## Quickstart
 
-_Not yet available — the scaffold is tracked in [issue #1](https://github.com/shreyashp47/CalmSpace/issues/1). Planned flow: `npm install` and `npm start`._
+```bash
+npm install
+npm start        # serves http://localhost:3000 (frontend from /public, API on /api/*)
+npm test         # node:test runner
+```
+
+Copy `.env.example` to `.env` and set `GROQ_API_KEY` before adding API routes (issue #6).
 
 ## Docs
 
