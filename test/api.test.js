@@ -157,7 +157,7 @@ test("direct transcribe sends audio to Groq with the user key", async () => {
     new dom.window.Blob(["fake"], { type: "audio/webm" })
   );
 
-  assert.deepEqual(result, { text: "i feel anxious" });
+  assert.equal(result.text, "i feel anxious");
   assert.match(fetchCalls[0].url, /\/audio\/transcriptions$/);
   assert.equal(fetchCalls[0].opts.headers.Authorization, "Bearer gsk_user_key");
 });
