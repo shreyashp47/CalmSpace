@@ -216,3 +216,78 @@ test("speak without text returns 400", async () => {
   });
   assert.equal(res.status, 400);
 });
+
+test("safety-check classifies risk=true", async () => {
+  calls = [];
+  const app = createApp({
+    groqFetchImpl: mockGroq({ json: { choices: [{ message: { content: '{"risk": true}' } }] } }),
+    apiKey: KEY,
+  }).listen(0);
+  await new Promise((resolve) => app.once("listening", resolve));
+  const url = `http://127.0.0.1:${app.address().port}`;
+  try {
+    const res = await fetch(`${url}/api/safety-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "i want to end it all" }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.risk, true);
+  } finally {
+    await new Promise((resolve) => app.close(resolve));
+  }
+
+  const payload = JSON.parse(calls[0].opts.body);
+  assert.match(payload.messages[0].content, /safety classifier/);
+  assert.match(payload.messages[0].content, /strict JSON/);
+  assert.equal(payload.messages[1].content, "i want to end it all");
+  assert.equal(payload.response_format.type, "json_object");
+});
+
+test("safety-check classifies risk=false", async () => {
+  const app = createApp({
+    groqFetchImpl: mockGroq({ json: { choices: [{ message: { content: '{"risk": false}' } }] } }),
+    apiKey: KEY,
+  }).listen(0);
+  await new Promise((resolve) => app.once("listening", resolve));
+  const url = `http://127.0.0.1:${app.address().port}`;
+  try {
+    const res = await fetch(`${url}/api/safety-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "my day was rough" }),
+    });
+    assert.deepEqual(await res.json(), { risk: false });
+  } finally {
+    await new Promise((resolve) => app.close(resolve));
+  }
+});
+
+test("safety-check treats unparseable classification as 502 (never fails open)", async () => {
+  const app = createApp({
+    groqFetchImpl: mockGroq({ json: { choices: [{ message: { content: "not json at all" } }] } }),
+    apiKey: KEY,
+  }).listen(0);
+  await new Promise((resolve) => app.once("listening", resolve));
+  const url = `http://127.0.0.1:${app.address().port}`;
+  try {
+    const res = await fetch(`${url}/api/safety-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "i feel off" }),
+    });
+    assert.equal(res.status, 502);
+  } finally {
+    await new Promise((resolve) => app.close(resolve));
+  }
+});
+
+test("safety-check without message returns 400", async () => {
+  const res = await fetch(`${baseUrl}/api/safety-check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "  " }),
+  });
+  assert.equal(res.status, 400);
+});

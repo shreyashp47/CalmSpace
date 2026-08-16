@@ -185,3 +185,16 @@ test("server speak request never carries an Authorization header", async () => {
   assert.equal(fetchCalls[0].url, "/api/speak");
   assert.equal(fetchCalls[0].opts.headers.Authorization, undefined);
 });
+
+test("safety-check always goes through our backend", async () => {
+  fetchCalls = [];
+  const dom = bootDom({ calmspace_api_key: "gsk_user_key" });
+  lastFetchImpl = async () => jsonResponse({ risk: true });
+
+  const result = await dom.window.calmspace.api.safetyCheck("i want to end it all");
+  assert.equal(result.risk, true);
+  assert.equal(fetchCalls.length, 1);
+  assert.equal(fetchCalls[0].url, "/api/safety-check");
+  assert.equal(fetchCalls[0].opts.headers.Authorization, undefined);
+  assert.equal(JSON.parse(fetchCalls[0].opts.body).message, "i want to end it all");
+});

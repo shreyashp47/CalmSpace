@@ -132,6 +132,21 @@
     return serverRes.blob();
   }
 
+  async function safetyCheck(message) {
+    var res = await request("/api/safety-check", null, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: message }),
+    });
+    return res.json();
+  }
+
   window.calmspace = window.calmspace || {};
-  window.calmspace.api = { chat: chat, transcribe: transcribe, speak: speak, pathFor: pathFor };
+  window.calmspace.api = {
+    chat: chat,
+    transcribe: transcribe,
+    speak: speak,
+    safetyCheck: safetyCheck,
+    pathFor: pathFor,
+  };
 })();

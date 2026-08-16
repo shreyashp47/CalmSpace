@@ -17,6 +17,9 @@ const MESSAGES = {
   unreachable: "Couldn't reach the AI service — check your connection and try again.",
 };
 
+const SAFETY_SYSTEM_PROMPT =
+  "You are a safety classifier inside Calm Space, a mental-wellbeing app. Your only job is to decide whether the user's message indicates they may be in crisis: suicidal ideation, intent of self-harm, intent of harm to others, or an acute emergency. Respond with strict JSON only: {\"risk\": true} or {\"risk\": false}. Do not include any other text.";
+
 function createApp({ groqFetchImpl = groqFetch, apiKey } = {}) {
   const app = express();
   app.use(express.json());
@@ -69,6 +72,51 @@ function createApp({ groqFetchImpl = groqFetch, apiKey } = {}) {
         ? data.choices[0].message.content
         : "";
       return res.json({ reply: content });
+    } catch (err) {
+      return handleGroqError(res, err, 0);
+    }
+  });
+
+  app.post("/api/safety-check", async (req, res) => {
+    const key = resolveKey();
+    if (!key) {
+      return res.status(401).json({ error: MESSAGES.missingKey });
+    }
+    const { message = "" } = req.body;
+    if (!message.trim()) {
+      return res.status(400).json({ error: "No message provided." });
+    }
+
+    const payload = {
+      model: MODELS.chat,
+      messages: [
+        { role: "system", content: SAFETY_SYSTEM_PROMPT },
+        { role: "user", content: message },
+      ],
+      temperature: 0,
+      response_format: { type: "json_object" },
+    };
+
+    try {
+      const upstream = await groqFetchImpl("/chat/completions", {
+        apiKey: key,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!upstream.ok) {
+        return handleGroqError(res, null, upstream.status);
+      }
+      const data = await upstream.json();
+      let parsed;
+      try {
+        parsed = JSON.parse(data.choices[0].message.content);
+      } catch (err) {
+        return res.status(502).json({ error: MESSAGES.unreachable });
+      }
+      if (typeof parsed.risk !== "boolean") {
+        return res.status(502).json({ error: MESSAGES.unreachable });
+      }
+      return res.json({ risk: parsed.risk });
     } catch (err) {
       return handleGroqError(res, err, 0);
     }

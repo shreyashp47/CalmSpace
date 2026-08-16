@@ -11,6 +11,21 @@
 
   var app = document.getElementById("app");
 
+  var state = {
+    messages: [],
+    contextSent: false,
+    busy: false,
+  };
+
+  var ERROR_MESSAGES = {
+    "direct-cors":
+      "Your own key couldn't be used directly from the browser this session. Check it in settings, or clear it to use the shared key.",
+    "rate-limited": "Rate limit reached — please wait a moment and try again.",
+    unauthorized: "The API key was rejected. Check it in settings.",
+    unreachable: "Couldn't reach the assistant — check your connection and try again.",
+    "bad-request": "That request couldn't be processed — try again.",
+  };
+
   var ORB_STATES = {
     idle: {
       status: "Tap to speak",
@@ -141,7 +156,10 @@
     render(
       '<div class="chat">' +
         '<div id="crisis-banner" class="crisis-banner hidden" role="alert">' +
-        "Feeling unsafe? Call or text 988, or reach out to someone you trust." +
+        '<span>Feeling unsafe? Call or text 988, or reach out to someone you trust.</span>' +
+        '<button id="crisis-dismiss" class="crisis-dismiss" type="button" aria-label="Dismiss crisis message">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4z" fill="currentColor"/></svg>' +
+        "</button>" +
         "</div>" +
         '<header class="topbar">' +
         '<span class="brand">Calm space</span>' +
@@ -165,14 +183,115 @@
         "</button>" +
         '<button id="btn-send" class="btn btn-primary btn-send" type="button">Send</button>' +
         "</footer>" +
+        '<p id="chat-error" class="chat-error hidden" aria-live="polite"></p>' +
+        '<p id="chat-busy" class="chat-busy hidden" aria-live="polite">Thinking…</p>' +
         "</div>"
     );
 
     document.getElementById("btn-settings").addEventListener("click", function () {
       showSettings(true);
     });
+    document.getElementById("btn-send").addEventListener("click", function () {
+      handleSend();
+    });
+    document.getElementById("chat-input").addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        handleSend();
+      }
+    });
+    document.getElementById("crisis-dismiss").addEventListener("click", function () {
+      setOrbState("idle");
+    });
 
     setOrbState("idle");
+  }
+
+  function addMessage(role, text) {
+    state.messages.push({ role: role, content: text });
+    var messages = document.getElementById("messages");
+    var bubble = document.createElement("div");
+    bubble.className = "message message-" + role;
+    bubble.textContent = text;
+    messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showInlineError(kind) {
+    var el = document.getElementById("chat-error");
+    el.textContent = ERROR_MESSAGES[kind] || "Something went wrong — please try again.";
+    el.classList.remove("hidden");
+  }
+
+  function clearInlineError() {
+    var el = document.getElementById("chat-error");
+    if (el) {
+      el.textContent = "";
+      el.classList.add("hidden");
+    }
+  }
+
+  function setBusy(busy) {
+    state.busy = busy;
+    var el = document.getElementById("chat-busy");
+    if (el) {
+      el.classList.toggle("hidden", !busy);
+    }
+  }
+
+  function playAudio(blob) {
+    var AudioCtor = window.Audio || window.webkitAudio;
+    if (!AudioCtor) {
+      return;
+    }
+    var url = URL.createObjectURL(blob);
+    var audio = new AudioCtor(url);
+    audio.onended = function () {
+      URL.revokeObjectURL(url);
+    };
+    audio.play().catch(function () {
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  async function handleSend() {
+    var input = document.getElementById("chat-input");
+    var text = input.value.trim();
+    if (!text || state.busy) {
+      return;
+    }
+    input.value = "";
+    clearInlineError();
+    addMessage("user", text);
+    setBusy(true);
+    try {
+      var userContext = "";
+      if (!state.contextSent) {
+        userContext = localStorage.getItem(STORAGE_KEYS.context) || "";
+        state.contextSent = true;
+      }
+
+      var safety = await window.calmspace.api.safetyCheck(text);
+      if (safety.risk) {
+        setOrbState("crisis");
+        return;
+      }
+
+      setOrbState("speaking");
+      var reply = await window.calmspace.api.chat(state.messages, userContext);
+      addMessage("assistant", reply.reply);
+
+      var voiceEnabled = localStorage.getItem(STORAGE_KEYS.voiceEnabled) !== "false";
+      if (voiceEnabled) {
+        var audio = await window.calmspace.api.speak(reply.reply);
+        playAudio(audio);
+      }
+      setOrbState("idle");
+    } catch (err) {
+      setOrbState("idle");
+      showInlineError(err.kind || "unknown");
+    } finally {
+      setBusy(false);
+    }
   }
 
   /* ---------- Boot ---------- */
