@@ -45,7 +45,6 @@
   --radius-full: 9999px;
 
   /* --- Motion --- */
-  --pulse-idle-to-peak: 1.08;
   --pulse-listening-duration: 1.4s;
   --pulse-speaking-duration: 1.8s;
 }
@@ -73,3 +72,64 @@ body {
 /* Light theme is deferred (req doc §5). All colors go through
    custom properties above so a light theme can be added as a
    separate layer without touching component styles. */
+
+/* ============================================================
+   App chrome — screens, cards, buttons
+   ============================================================ */
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  max-width: 26rem;
+  width: 100%;
+}
+
+.card-title {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+}
+
+.card-text {
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.card-muted {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.btn {
+  font-family: inherit;
+  font-size: var(--text-md);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-6);
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: var(--icon-on-accent);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
